@@ -1,0 +1,74 @@
+version: '3.1'
+
+services:
+    mongo:
+        image: mongo
+        networks:
+            - local
+        restart: always
+        ports:
+            - 27017:27017
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: example
+
+    mongo-express:
+        image: mongo-express
+        networks:
+            - local
+        depends_on:
+            - mongo
+        restart: always
+        ports:
+            - 8081:8081
+        environment:
+            ME_CONFIG_MONGODB_ADMINUSERNAME: root
+            ME_CONFIG_MONGODB_ADMINPASSWORD: example
+
+    iex-service:
+        image: docker.pkg.github.com/7d9cc24319eed6381e17/iex-service/iex-service:bb9cbc26
+
+        networks:
+            - local
+        restart: always
+        env_file: .env.local
+
+    alert-service:
+        image: docker.pkg.github.com/7d9cc24319eed6381e17/alert-service/alert-service:7eb14fbb
+        networks:
+            - local
+        depends_on:
+            - email-service
+            - telegram-service
+            - mongo
+            - front-api
+        restart: always
+        env_file: .env.local
+        # TODO: remove port mapping after fetcher service release
+        ports:
+            - 8090:8080
+
+    email-service:
+        image: docker.pkg.github.com/7d9cc24319eed6381e17/alert-service-email/alert-service-email:c3d6358d
+        networks:
+            - local
+        restart: always
+        env_file: .env.local
+
+    telegram-service:
+        image: docker.pkg.github.com/7d9cc24319eed6381e17/alert-service-telegram/alert-service-telegram:5ccd9837
+        networks:
+            - local
+        restart: always
+
+    front-api:
+        image: docker.pkg.github.com/7d9cc24319eed6381e17/front-api/front-api:e64181ed
+        networks:
+            - local
+        restart: always
+        env_file: .env.local
+        ports:
+            - 8080:8080
+
+networks:
+    local:
